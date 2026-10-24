@@ -95,3 +95,11 @@ git pull && docker compose up -d --build
   ```bash
   docker compose restart bot
   ```
+
+---
+
+## License & Attribution
+
+This project is licensed under the **MIT License with Attribution** (see [`LICENSE`](LICENSE)).
+
+You are free to use, modify, distribute, fork, and integrate this software for **any purpose** (commercial, personal, or educational), under the condition that the original author attribution and copyright notice (**Abdulmajid Yunus / [@goldendevuz](https://github.com/goldendevuz)**) are preserved and displayed in the `README.md` file of any copies, forks, or derivative works.
