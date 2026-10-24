@@ -1,0 +1,77 @@
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    container_name: alifbek_telegram_bot_api
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_LOCAL=1
+      - TELEGRAM_WORK_DIR=/var/lib/telegram-bot-api
+      - TELEGRAM_TEMP_DIR=/tmp/telegram-bot-api
+    volumes:
+      - telegram_bot_api_data:/var/lib/telegram-bot-api
+    ports:
+      # Port 8081 hostda band bo'lishi mumkinligi uchun 8083 portga yo'naltirilgan
+      - "${TELEGRAM_BOT_API_PORT:-8083}:8081"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+    cpus: 0.5
+    mem_limit: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alifbek_bot
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot-api
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/data/stats.db
+      - TELEGRAM_API_SERVER=http://telegram-bot-api:8081
+      - PORT=8000
+      - HOST=0.0.0.0
+      - WEBHOOK_HOST=${WEBHOOK_HOST:-http://bot:8000}
+      - WEBHOOK_PATH=${WEBHOOK_PATH:-/webhook}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      # Named volume ensures persistent stats even when container is recreated
+      - bot_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
+    cpus: 0.5
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Healthcheck checking the FastAPI /health endpoint
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  bot_data:
+    name: alifbek_bot_data
+  telegram_bot_api_data:
+    name: alifbek_telegram_bot_api_data
